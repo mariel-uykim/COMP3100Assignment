@@ -1,43 +1,43 @@
+
 import java.net.*;
 import java.io.*;
 
-public class Client {
+public class DSClient {
     Socket s;
     BufferedReader input;
-    DataInputStream reply;
+    BufferedReader reply;
     DataOutputStream output;
 
-    public Client(String hostid, int port) {
+    public DSClient(String hostid, int port) {
 
         //try to connect to server
         try {
             s = new Socket(hostid, port);
             System.out.println("Connection Success!");
 
-            input = new BufferedReader(new InputStreamReader(System.in));
+            input = new BufferedReader(new InputStreamReader(s.getInputStream()));
             output = new DataOutputStream(s.getOutputStream());
-            reply = new DataInputStream(s.getInputStream());
+            reply = new BufferedReader(new InputStreamReader(s.getInputStream()));
             
         }
         catch(Exception e) {
-            System.out.println("Connection error!");
+            System.out.println(e);
         }
 
         //input message and response
         String message = "";
         String response = "";
 
-        while(!message.equals("END")) {
+        while(!response.equals("QUIT")) {
             try {
-                message = input.readLine();
-                output.writeUTF(message);
+                output.write(("HELO").getBytes());
                 output.flush();
 
-                response = reply.readUTF();
+                response = reply.readLine();
                 System.out.println("Status: " + response);
             }
             catch(Exception e) {
-                System.out.println("Sending failed");
+                System.out.println(e);
             }
         }
         try {
@@ -47,11 +47,11 @@ public class Client {
             s.close();
         }
         catch (Exception e) {
-            System.out.println("Failed to close");
+            System.out.println(e);
         }
     }
 
     public static void main(String args[]) {
-        Client c = new Client("127.0.0.1", 8000);
+        DSClient c = new DSClient("127.0.0.1",50000);
     }
 }
