@@ -1,52 +1,36 @@
-import java.net.*;
-import java.io.*;
-
 public class Server {
-    Socket s;
-    ServerSocket server;
-    DataInputStream input;
-    DataOutputStream reply;
+    String type;
+    int id;
+    String state;
+    int curStartTime;//current start time
+    int core;
+    int memory;
+    int disk;
+    int wJobs; //waiting jobs
+    int rJobs; //running jobs
 
-    public Server(int port) {
-        try {
-            server = new ServerSocket(port);
-            System.out.println("Server is online, waiting for client..");
-
-            //wait for client to conncect
-            s = server.accept();
-            System.out.println("Client successfully connected");
-            
-            input = new DataInputStream(new BufferedInputStream(s.getInputStream()));
-            reply = new DataOutputStream(s.getOutputStream());
-
-            String msg = "";
-
-            while(!msg.equals("END")) {
-                try {
-                    msg = input.readUTF();
-                    System.out.println("Message: " + msg);
-
-                    reply.writeUTF("Server received");
-                    reply.flush();
-                }
-                catch(Exception e) {
-                    System.out.println("error reading message");
-                }
-            }
-
-            System.out.println("Job finished, terminating connection");
-
-            s.close();
-            input.close();
-            reply.close();
-
-        }
-        catch(Exception e) {
-            System.out.println("Connection error!");
-        }
+    public Server(String type, int id,
+                   String state, int sTime,
+                   int core, int mem, int disk,
+                   int wJobs, int rJobs)
+    {
+        this.type = type;
+        this.id = id;
+        this.state = state;
+        this.curStartTime = sTime;
+        this.core = core;
+        this.memory = mem;
+        this.disk = disk;
+        this.wJobs = wJobs;
+        this.rJobs = rJobs;
     }
-
-    public static void main(String args[]) {
-        Server s = new Server(8000);
-    }
+    public int availability(){
+        if(this.state == "unavailable"){
+            return -1;
+        }
+        else if(this.state == "idle"){
+            return 0;
+        }
+        return this.curStartTime;
+    } 
 }

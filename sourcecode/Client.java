@@ -68,8 +68,9 @@ public class DSClient {
         }
     }
 
-    //getData(): get data from jobn response
-    public static String getInfo(String response) throws IOException{
+    //getData(): get data from jobn response, returns number of data
+    public static int getInfo(String response) throws IOException{
+        //split response string into several parts
         String [] res = response.split(" ", 7);
         String send = "GETS Capable ";
 
@@ -82,7 +83,18 @@ public class DSClient {
         
         String data = printRes();
 
-        return data;
+        //split data if not error
+        if(data.contains("DATA")){
+            String [] dataRec = data.split(" ", 3);
+
+            String nData = dataRec[1];
+
+            if(nData == "."){
+                return -1;
+            }
+            return Integer.parseInt(nData);
+        }
+        return -1;
     }
 
     //DSClient(): Class instantiates server connection and communicates
@@ -107,16 +119,20 @@ public class DSClient {
             sendMsg("REDY");
             message = printRes();
 
-            if(getInfo(message).contains("DATA")){
-                sendMsg("OK");
+            int nData = getInfo(message);
+            if(nData == -1) {
+                sendMsg("QUIT");
+            }
+            
+            sendMsg("OK");
 
-            String record = printRes();
+            //send to function to create individual objects
+            String serverInfo = printRes();
             
             sendMsg("OK");
 
             if(printRes().equals(".")){ 
                 sendMsg("QUIT");
-            }
             }
             
         }
