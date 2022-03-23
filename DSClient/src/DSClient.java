@@ -6,7 +6,7 @@ public class DSClient {
     private static BufferedReader input;
     private static DataOutputStream output;
     private static String username = System.getProperty("user.name");
-
+    
     //serverConn(): estalishes connection with the server
     public static boolean serverConn(String hostid, int port) {
         try {
@@ -68,21 +68,26 @@ public class DSClient {
         }
     }
 
-    //getData(): get data from jobn response, returns number of data
-    public static int getInfo(String response) throws IOException{
-        //split response string into several parts
-        String [] res = response.split(" ", 7);
-        String send = "GETS Capable ";
+    //getData(): get data from jobn response if 1 or all if 0, 
+    //returns number of data
+    public static int getInfo(String response, int option) throws IOException{
+        if(option == 1) {
+            //split response string into several parts
+            String [] res = response.split(" ", 7);
+            String send = "GETS Capable ";
 
-        //combine last three digits
-        for(int i = (res.length)-3; i < res.length; i++){
-            send += (res[i] + " ");
+            //combine last three digits
+            for(int i = (res.length)-3; i < res.length; i++){
+                send += (res[i] + " ");
+            }
+
+            sendMsg(send);
         }
-
-        sendMsg(send);
-        
+        else if(option == 2) {
+            sendMsg("GETS All");
+        }
         String data = printRes();
-
+        
         //split data if not error
         if(data.contains("DATA")){
             String [] dataRec = data.split(" ", 3);
@@ -95,6 +100,14 @@ public class DSClient {
             return Integer.parseInt(nData);
         }
         return -1;
+    }
+
+    //getLargestServer(): gets Largest server (last on list)
+    public static String getLargestServer(String data) {
+        String [] list = data.split("--");
+        String largest = list[list.length-2];
+        
+        return largest;
     }
 
     //DSClient(): Class instantiates server connection and communicates
@@ -119,17 +132,20 @@ public class DSClient {
             sendMsg("REDY");
             message = printRes();
 
-            int nData = getInfo(message);
+            int nData = getInfo(message, 2);
+
             if(nData == -1) {
                 sendMsg("QUIT");
             }
             
-            sendMsg("OK");
+            String serverInfo = "";
 
-            //send to function to create individual objects
-            String serverInfo = printRes();
+            while(!serverInfo.contains(".")) {
+                sendMsg("OK");
+                serverInfo=serverInfo + "--" + printRes();
+            }
             
-            sendMsg("OK");
+            System.out.println(getLargestServer(serverInfo));
 
             if(printRes().equals(".")){ 
                 sendMsg("QUIT");
@@ -147,4 +163,5 @@ public class DSClient {
         DSClient c = new DSClient("127.0.0.1",50000);
     }
 }
+
 
