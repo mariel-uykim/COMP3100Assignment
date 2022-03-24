@@ -1,12 +1,13 @@
 import java.net.*;
 import java.io.*;
+import java.util.Arrays;
 
 public class DSClient {
     private static Socket s;
     private static BufferedReader input;
     private static DataOutputStream output;
     private static String username = System.getProperty("user.name");
-    
+
     //serverConn(): estalishes connection with the server
     public static boolean serverConn(String hostid, int port) {
         try {
@@ -42,7 +43,7 @@ public class DSClient {
 
     //printRes(): gets and prints out received message
     public static String printRes() throws IOException {
-        String response = new String();
+        String response = "";
         response = input.readLine();
 
         System.out.println("SERVER: " + response);
@@ -68,7 +69,7 @@ public class DSClient {
         }
     }
 
-    //getData(): get data from jobn response if 1 or all if 0, 
+    //getInfo()): get data from jobn response if 1 or all if 0, 
     //returns number of data
     public static int getInfo(String response, int option) throws IOException{
         if(option == 1) {
@@ -103,13 +104,25 @@ public class DSClient {
     }
 
     //getLargestServer(): gets Largest server (last on list)
-    public static String getLargestServer(String data) {
+    public static String [] getLargestServer(String data) {
         String [] list = data.split("--");
-        String largest = list[list.length-2];
-        
-        return largest;
+        String largest = list[list.length-1];
+        String [] serverInfo = largest.split(" "); 
+        return serverInfo;
     }
 
+    //schedule(): schedules a job to DSServer. Returns false if
+    //failed
+    public static Boolean schedule(int jobID, String sType, int sID) throws IOException {
+        sendMsg("SCHD " + jobID + " " + sType + " " + sID);
+        return true;
+    }
+
+    //getJobID(): gets jobID from server response
+    public static int getJobID(String response) {
+        String [] data = response.split(" ");
+        return Integer.parseInt(data[2]);
+    }
     //DSClient(): Class instantiates server connection and communicates
     //with DS Server 
     public DSClient(String hostid, int port) {
@@ -121,34 +134,57 @@ public class DSClient {
             return;
         }
 
-        //input message
-        String message = "";
-
         try {
             if(!initialise()) {
                 return;
             }
 
             sendMsg("REDY");
-            message = printRes();
+            String jobn = printRes();
 
-            int nData = getInfo(message, 2);
+            //get list of servers
+            int nData = getInfo(jobn, 2);
 
+            //quit if no servers or error
             if(nData == -1) {
                 sendMsg("QUIT");
             }
             
-            String serverInfo = "";
+            sendMsg("OK");
+            String reply = null;
+            String serverInfo = " ";
 
-            while(!serverInfo.contains(".")) {
-                sendMsg("OK");
-                serverInfo=serverInfo + "--" + printRes();
+            for(int i = 0; i < nData; i++) {
+                reply = input.readLine();
+                serverInfo += ("--" + reply);
             }
-            
-            System.out.println(getLargestServer(serverInfo));
 
-            if(printRes().equals(".")){ 
-                sendMsg("QUIT");
+            sendMsg("OK");
+
+            //store data in server array
+            String [] server = getLargestServer(serverInfo);
+            System.out.println("SERVER: " + Arrays.toString(server));
+            printRes();
+            while(true) {
+                if(jobn.contains("JCPL")) {
+                    continue;
+                }
+                String sched = "SCHD " + getJobID(jobn) + " " + server[0] + " " + Integer.parseInt(server[1]);
+                System.out.println("SCHED: " + sched);
+                sendMsg(sched);
+
+                printRes();
+
+                sendMsg("REDY");
+
+                jobn = printRes();
+                System.out.println("JOB ID: " + jobn);
+
+                if(jobn.equals("NONE")) {
+                    sendMsg("QUIT");
+                    break;
+                }
+
             }
             
         }
