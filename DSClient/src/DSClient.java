@@ -165,8 +165,15 @@ public class DSClient {
             String [] server = getLargestServer(serverInfo);
             System.out.println("SERVER: " + Arrays.toString(server));
             printRes();
+
             while(true) {
                 if(jobn.contains("JCPL")) {
+                    sendMsg("REDY");
+                    jobn = printRes();
+                    if(jobn.contains("NONE")) {
+                        sendMsg("QUIT");
+                        break;
+                    }
                     continue;
                 }
                 String sched = "SCHD " + getJobID(jobn) + " " + server[0] + " " + Integer.parseInt(server[1]);
@@ -180,7 +187,7 @@ public class DSClient {
                 jobn = printRes();
                 System.out.println("JOB ID: " + jobn);
 
-                if(jobn.equals("NONE")) {
+                if(jobn.contains("NONE")) {
                     sendMsg("QUIT");
                     break;
                 }
