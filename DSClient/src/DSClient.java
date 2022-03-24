@@ -165,8 +165,14 @@ public class DSClient {
             String [] server = getLargestServer(serverInfo);
             System.out.println("SERVER: " + Arrays.toString(server));
             printRes();
-
+            
+            int i = 0;
             while(true) {
+                //restarts i 
+                if(i>Integer.parseInt(server[1])) {
+                    i = 0;
+                }
+                //skips current iteration when server sends JCPL data
                 if(jobn.contains("JCPL")) {
                     sendMsg("REDY");
                     jobn = printRes();
@@ -176,9 +182,10 @@ public class DSClient {
                     }
                     continue;
                 }
-                String sched = "SCHD " + getJobID(jobn) + " " + server[0] + " " + Integer.parseInt(server[1]);
+                String sched = "SCHD " + getJobID(jobn) + " " + server[0] + " " + i;
                 System.out.println("SCHED: " + sched);
                 sendMsg(sched);
+                i++;
 
                 printRes();
 
@@ -191,6 +198,7 @@ public class DSClient {
                     sendMsg("QUIT");
                     break;
                 }
+
 
             }
             
