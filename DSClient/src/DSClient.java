@@ -1,5 +1,6 @@
 import java.net.*;
 import java.io.*;
+import java.util.*;
 
 public class DSClient {
     private static Socket s;
@@ -109,12 +110,18 @@ public class DSClient {
     public static String getAllServers(int nData) throws IOException {
         //stores response on server information
         String reply = null;
-        String serverInfo = " ";
+        String serverInfo = "";
 
         for(int i = 0; i < nData; i++) {
             reply = input.readLine();
-            System.out.println(reply);
-            serverInfo += ("--" + reply);
+
+            if(i == nData-1) {
+                serverInfo += (reply);
+            }
+            
+            else {
+                serverInfo += (reply + "--");
+            }
         }
 
         sendMsg("OK");
@@ -125,14 +132,62 @@ public class DSClient {
 
     //getLargestServer(): Calls on to getAllServers to see all servers, 
     //and returns Largest server (last on list)
-    public static String [] getLargestServer(int nData) throws IOException {
+    public static ArrayList<ArrayList<String>> getLargestServer(int nData) throws IOException {
         String data = getAllServers(nData);
+        int nDataFields = 9;
+        int coreIndex = 4;
+        int lsIdx = 0;
 
         String [] list = data.split("--");
-        String largest = list[list.length-1];
-        String [] serverInfo = largest.split(" ");
-        
-        return serverInfo;
+        ArrayList<ArrayList<String>> largestServer = new ArrayList<ArrayList<String>>();
+        String [][] servers = new String[list.length][nDataFields];
+
+        for(int i = 0; i < list.length; i++) {
+            String [] temp = list[i].split(" ");
+
+            if(temp.length == nDataFields) {
+                for(int j = 0; j < nDataFields; j++) {  
+                    servers[i][j] = temp[j];
+                }
+            }
+            
+            //add to list if the same size
+            if(largestServer.isEmpty() ||
+               servers[i][coreIndex].equals(largestServer.get(0).get(coreIndex))) {
+
+                largestServer.add(new ArrayList<String>());
+
+                for(int j = 0; j < nDataFields; j++) {
+                    
+                    largestServer.get(lsIdx).add(servers[i][j]);
+
+                }
+
+                lsIdx++;
+            }
+
+            //restart list if greater
+            else if(Integer.parseInt(servers[i][coreIndex]) >
+                    Integer.parseInt(largestServer.get(0).get(coreIndex))) {
+
+                lsIdx = 0;
+                
+                //clear current list
+                largestServer.clear();
+                largestServer.add(new ArrayList<String>());
+
+                for(int j = 0; j < nDataFields; j++) {
+                    
+                    largestServer.get(lsIdx).add(servers[i][j]);
+
+                }
+
+
+                lsIdx++;
+            }
+        }
+
+        return largestServer;
     }
 
     //schedule(): schedules a job to DSServer. Returns false if
@@ -187,17 +242,19 @@ public class DSClient {
             sendMsg("OK");
 
             //gets largest server and stores in array
-            String [] server = getLargestServer(nData);
+            ArrayList<ArrayList<String>> servers = getLargestServer(nData);
 
             //clear input stream
             printRes(false);
 
             int i = 0;
             while(true) {
-                //restarts i when it's more than the highest server id
-                if(i>Integer.parseInt(server[1])) {
+                if(i >= servers.size()) {
                     i = 0;
                 }
+
+                String serverType = servers.get(i).get(0);
+                String serverID = servers.get(i).get(1);
 
                 //skips current iteration when server sends JCPL data
                 if(jobn.contains("JCPL")) {
@@ -212,13 +269,12 @@ public class DSClient {
 
                 //sends a schedule to server consisting of current job id, the server type,
                 //and server id
-                String sched = "SCHD " + getJobID(jobn) + " " + server[0] + " " + i;
+                String sched = "SCHD " + getJobID(jobn) + " " + serverType + " " + serverID;
                 System.out.println("SCHED: " + sched);
                 sendMsg(sched);
 
-                //increment i
                 i++;
-                
+
                 printRes(false);
 
                 sendMsg("REDY");
