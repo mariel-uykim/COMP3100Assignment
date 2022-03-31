@@ -160,7 +160,7 @@ public class DSClient {
     * using a for loop and stores it into a string.
     *
     * @param  nData  number of server data to read
-    * @return a string of all server data separated by "--"
+    * @return a string of all server data separated by "###"
     */
     public static String getAllServers(int nData) throws IOException {
         //stores response on server information
@@ -176,7 +176,7 @@ public class DSClient {
             }
             
             else {
-                serverInfo += (reply + "--");
+                serverInfo += (reply + "###");
             }
         }
 
@@ -203,7 +203,7 @@ public class DSClient {
         int typeIndex = 0;
         int lsIdx = 0;
 
-        String [] list = data.split("--");
+        String [] list = data.split("###");
         ArrayList<ArrayList<String>> largestServer = new ArrayList<ArrayList<String>>();
         String [][] servers = new String[list.length][nDataFields];
 
