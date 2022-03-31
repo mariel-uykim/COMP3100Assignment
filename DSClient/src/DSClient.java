@@ -273,7 +273,6 @@ public class DSClient {
                 //sends a schedule to server consisting of current job id, the server type,
                 //and server id
                 String sched = "SCHD " + getJobID(jobn) + " " + serverType + " " + serverID;
-                System.out.println("SCHED: " + sched);
                 sendMsg(sched);
 
                 i++;
