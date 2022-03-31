@@ -253,7 +253,6 @@ public class DSClient {
             }
         }
 	
-	System.out.println(largestServer);
         return largestServer;
     }
 
