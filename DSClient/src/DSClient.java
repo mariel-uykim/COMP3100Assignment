@@ -32,7 +32,7 @@ public class DSClient {
         sendMsg("HELO");
 
         if(printRes(true).equals("OK")) {
-            sendMsg("AUTH " + username + "\n");
+            sendMsg("AUTH " + username);
         }
 
         if(printRes(false).equals("OK")){
@@ -136,6 +136,7 @@ public class DSClient {
         String data = getAllServers(nData);
         int nDataFields = 9;
         int coreIndex = 4;
+        int typeIndex = 0;
         int lsIdx = 0;
 
         String [] list = data.split("--");
@@ -152,8 +153,9 @@ public class DSClient {
             }
             
             //add to list if the same size
-            if(largestServer.isEmpty() ||
-               servers[i][coreIndex].equals(largestServer.get(0).get(coreIndex))) {
+            if(largestServer.isEmpty() || (
+               servers[i][coreIndex].equals(largestServer.get(0).get(coreIndex)) &&
+               servers[i][typeIndex].equals(largestServer.get(0).get(typeIndex)))) {
 
                 largestServer.add(new ArrayList<String>());
 
