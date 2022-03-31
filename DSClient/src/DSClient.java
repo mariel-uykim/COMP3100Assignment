@@ -1,14 +1,32 @@
+/**
+ * This is a Client-side simulator for a distributed system job scheduler.
+ * This is written in Java and needs the DS-Server prorgam in order to successfully
+ * work. 
+ * 
+ * Created by: Mariel Anne Uykim (46129448) 
+ * For: COMP3100 Assignment 1 
+ */
+
 import java.net.*;
 import java.io.*;
 import java.util.*;
 
 public class DSClient {
+
     private static Socket s;
     private static BufferedReader input;
     private static DataOutputStream output;
     private static String username = System.getProperty("user.name");
 
-    //serverConn(): estalishes connection with the server
+    /**
+    * serverConn(): This method connects to the server-side 
+    * simulator and returns true if successful and false if 
+    * it failed to connect
+    *
+    * @param  hostid  the IP address of the server
+    * @param  port the port the server is listening in
+    * @return connection success/failure
+    */
     public static boolean serverConn(String hostid, int port) {
         try {
             s = new Socket(hostid, port);
@@ -27,7 +45,14 @@ public class DSClient {
         return false;
     }
 
-    //initialise(): starts communication and authentication with server
+    /**
+    * initialise(): This method starts the communication with
+    * the server-side simulator and authenticates the current 
+    * user by getting the user name of the system. Returns true
+    * if successfully authenticated and false if failed to do so.
+    *
+    * @return authentication success/failure
+    */
     public static Boolean initialise() throws IOException{
         sendMsg("HELO");
 
@@ -41,7 +66,14 @@ public class DSClient {
         return false;
     }
 
-    //printRes(): gets server response and prints out received message if print=true
+    /**
+    * printRes(): This method reads the response from the server 
+    * through BufferReader's readLine() method. It prints the 
+    * response if print is true. The method returns the response.
+    *
+    * @param  print if it should print out the response in the console
+    * @return response
+    */
     public static String printRes(Boolean print) throws IOException {
         String response = "";
         response = input.readLine();
@@ -52,13 +84,21 @@ public class DSClient {
         return response;
     }
 
-    //sendMsg(): sends message to server
+    /**
+    * sendMsg(): This method sends a message to the server by using
+    * DataOutputStream's write() method.
+    *
+    * @param  msg message to be sent
+    */
     public static void sendMsg(String msg) throws IOException {
         output.write((msg+"\n").getBytes());
         output.flush();
     }
 
-    //closeConn(): close connection
+    /**
+    * closeConn(): This method closes all connections to the server
+    * and prints out an error if connection problem occurs
+    */
     public static void closeConn() {
         try {
             System.out.println("terminating");
@@ -71,9 +111,17 @@ public class DSClient {
         }
     }
 
-    //getInfo(): get data from jobn response if 1 or all if 0, returns
-    //number of data. If option is 1, gets servers with specific capabilities
-    //if 2, gets all server
+    /**
+    * getInfo(): This method gets server data from the server-side simulator
+    * using the GETS command. Depending on the option the user selects, the
+    * information retrieved varies. Using option 1 gets servers with specific
+    * capabilities for the job while selecting option 2 retrieves all existing 
+    * servers.
+    *
+    * @param  response  the JOBN response of the server
+    * @param  option the type of information to get
+    * @return number of servers available or -1 if none
+    */
     public static int getInfo(String response, int option) throws IOException {
         if(option == 1) {
             //split response string into several parts
@@ -106,12 +154,20 @@ public class DSClient {
         return -1;
     }
 
-    //getServers(): stores server information 
+    /**
+    * getServers(): This method reads all the server data sent by the
+    * server-side simulator based on the number of servers available by
+    * using a for loop and stores it into a string.
+    *
+    * @param  nData  number of server data to read
+    * @return a string of all server data separated by "--"
+    */
     public static String getAllServers(int nData) throws IOException {
         //stores response on server information
         String reply = null;
         String serverInfo = "";
 
+        //concatenate each new server to serverInfo
         for(int i = 0; i < nData; i++) {
             reply = input.readLine();
 
@@ -130,8 +186,16 @@ public class DSClient {
 
     }
 
-    //getLargestServer(): Calls on to getAllServers to see all servers, 
-    //and returns Largest server (last on list)
+    /**
+    * getLargestServer(): This method calls getAllServers to get server data
+    * and splits this into a 2D array. While storing into the array, it checks
+    * for the number of cores from each server and compares them to that on the
+    * 2D ArrayList which stores the highest count so far. It then returns this
+    * ArrayList.
+    *
+    * @param  nData  number of server data to read
+    * @return 2D ArrayList of servers with the largest server types
+    */
     public static ArrayList<ArrayList<String>> getLargestServer(int nData) throws IOException {
         String data = getAllServers(nData);
         int nDataFields = 9;
@@ -193,21 +257,26 @@ public class DSClient {
         return largestServer;
     }
 
-    //schedule(): schedules a job to DSServer. Returns false if
-    //failed
-    public static Boolean schedule(int jobID, String sType, int sID) throws IOException {
-        sendMsg("SCHD " + jobID + " " + sType + " " + sID);
-        return true;
-    }
-
-    //getJobID(): gets jobID from server response
+    /**
+    * getJobID(): This method gets the JOBN response of the server-side 
+    * simulator and splits it to get the job id. 
+    *
+    * @param  response  the JOBN response of the server
+    * @return job id of response
+    */
     public static int getJobID(String response) {
         String [] data = response.split(" ");
         return Integer.parseInt(data[2]);
     }
 
-    //DSClient(): Class instantiates server connection and communicates
-    //with DS Server 
+    /**
+    * DSClient(): This is the constructor for the DSClient class.
+    * This connects to the server-side simulator, gets server information,
+    * and schedules job using the largest round robin algorithm.
+    *
+    * @param  hostid  the ip address of the server
+    * @param port the port that server is listening to
+    */
     public DSClient(String hostid, int port) {
 	    
         //try to connect to server
