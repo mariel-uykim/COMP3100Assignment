@@ -1,5 +1,7 @@
-COMP3100 Assignment Part 1
+COMP3100 Assignment 1
 
-Distributed Event System Job Scheduler
+Distributed System Job Scheduler Simualtor (Client-side)
 
-Created by: Mariel Anne U. Uykim (46129448)
+Created by: Mariel Anne Uykim (46129448)
+
+
