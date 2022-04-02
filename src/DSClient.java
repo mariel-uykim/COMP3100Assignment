@@ -143,8 +143,9 @@ public class DSClient {
         //split data if not error
         if(data.contains("DATA")){
             String [] dataRec = data.split(" ", 3);
-
-            String nData = dataRec[1];
+            
+            int nRecIdx = 1;
+            String nData = dataRec[nRecIdx];
 
             if(nData == "."){
                 return -1;
@@ -264,8 +265,9 @@ public class DSClient {
     * @return job id of response
     */
     public static int getJobID(String response) {
+        int idIdx = 2; 
         String [] data = response.split(" ");
-        return Integer.parseInt(data[2]);
+        return Integer.parseInt(data[idIdx]);
     }
 
     /**
