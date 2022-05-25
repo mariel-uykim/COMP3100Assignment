@@ -11,6 +11,7 @@ public class DSClient {
     private static BufferedReader input;
     private static DataOutputStream output;
     private static String username = System.getProperty("user.name");
+    private static HashMap<String, ArrayList<Integer>> serverJobs = new HashMap<String, ArrayList<Integer>>();
 
     public static boolean serverConn(String hostid, int port) {
         try {
@@ -262,8 +263,27 @@ public class DSClient {
         return Integer.parseInt(data[idx]);
     }
 
-    //check pending jobs of other servers and migrate others to empty servers
+    //modifyServerJobs(): modifies global variable 'serverJobs' that keeps 
+    //track of all job acitivities. Option 0->delete job, Option 1-> add job. 
+    pubic static void modifyServerJobs(String sType, String sId, String jobId, int option) {
+        String serverInfo = sType + "||" + sId;
 
+        if(option == 1){
+            String jobsPending = serverJobs.get(serverInfo);
+
+            if(jobsPending != null) {
+                serverInfo.put(serverInfo, job)
+            }   
+            else {
+                serverInfo.put(serverInfo, jobId);
+            }
+        }
+        else {
+            
+        }
+    }
+    //check pending jobs of other servers and migrate others to empty servers
+    //add on top of fv check other performance matrix
 
     public DSClient(String hostid, int port) {
         //try to connect to server
