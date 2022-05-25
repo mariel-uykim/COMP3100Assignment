@@ -2,7 +2,6 @@ import java.net.*;
 import java.io.*;
 import java.util.*;
 import java.util.ArrayList;
-
 import javax.swing.plaf.TreeUI;
 
 public class DSClient {
@@ -12,6 +11,7 @@ public class DSClient {
     private static DataOutputStream output;
     private static String username = System.getProperty("user.name");
     private static HashMap<String, ArrayList<Integer>> runningJobs = new HashMap<String, ArrayList<Integer>>();
+    private static int jobCount = 0;
 
     public static boolean serverConn(String hostid, int port) {
         try {
@@ -202,7 +202,9 @@ public class DSClient {
             int wJobs = Integer.parseInt(allServers[curr][wJobIndex]);
             int rJobs = Integer.parseInt(allServers[curr][rJobIndex]);
 
-            if((wJobs == 0 || rJobs == 0) && i >= 0) {
+            if((wJobs == 0 || rJobs == 0) &&
+                wJobs < 2 && 
+                && i >= 0) {
                 if(bestServer == null) {
                     bestServer = new String[nDataFields];
                 }
@@ -288,9 +290,17 @@ public class DSClient {
             }
         }
     }
-    //migrateServer(): migrates a job to different server 
-    private static void migrateServer(int jobId) {
-        
+    //checkServerJobs(): check current jobs in server, returns percentage of no. of running jobs 
+    private static float checkServerJobs(String type, String id) {
+        String serverInfo = type + "||" + id;
+        ArrayList<Integer> tempArr = runningJobs.get(serverInfo);
+        float percent = 0;
+
+        if(tempArr != null) {
+            percent = tempArr.size()/jobCount;
+        }
+
+        return percent;
     }
 
     //check pending jobs of other servers and migrate others to empty servers
@@ -322,6 +332,7 @@ public class DSClient {
                 //skip current iteration if sent response is JCPL 
                 if(currJob.contains("JCPL")) {
                     modifyRunningJobs("", "", getJobInfo(currJob, 'i'), 0);
+                    jobCount--;
                     continue;
                 }
 
@@ -355,10 +366,7 @@ public class DSClient {
                 String sched = "SCHD " + jobID + " " + serverType + " " + serverID;
                 send(sched);
                 modifyRunningJobs(serverType, serverID, jobID, 1);
-                runningJobs.entrySet().forEach(e -> {
-                    System.out.print(e.getKey() + "--->" + Arrays.toString(e.getValue()) + " // ");
-                });
-                System.out.println("");
+                jobCount++;
 
                 response(false);
             }
