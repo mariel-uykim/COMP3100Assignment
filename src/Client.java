@@ -296,7 +296,7 @@ public class DSClient {
         ArrayList<Integer> tempArr = runningJobs.get(serverInfo);
         float percent = 0;
 
-        if(tempArr != null) {
+        if(tempArr != null && jobCount > 0) {
             percent = tempArr.size()/jobCount;
         }
 
