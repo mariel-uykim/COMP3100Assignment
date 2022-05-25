@@ -124,6 +124,7 @@ public class DSClient {
 
     }
     
+    //gets all servers sent by DS server
     public static String[][] getAllServers (int nData, int nDataFields) throws IOException {
         String [][] allServers = new String[nData][nDataFields];
 
@@ -138,6 +139,9 @@ public class DSClient {
 
         return allServers;
     }
+
+    //best server uses a fitness value and other criterias to determine which server
+    //to use.
     public static String[] getBestServer(int nData, int jobCore) throws IOException {
         int nDataFields = 9;
         int coreIndex = 4;
