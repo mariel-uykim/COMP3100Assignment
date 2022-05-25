@@ -30,6 +30,7 @@ public class DSClient {
         return false;
     }
 
+    //initialise(): initialises and authenticates with server
     public static Boolean initialise() throws IOException{
         send("HELO");
 
@@ -40,9 +41,11 @@ public class DSClient {
         if(response(false).equals("OK")){
             return true;
         }
-        return false;
+        return false;   
     }
 
+    //response(): returns response of servers and prints out response
+    //if print is true.
     public static String response(Boolean print) throws IOException {
         String response = "";
         response = input.readLine();
@@ -53,11 +56,14 @@ public class DSClient {
         return response;
     }
 
+    //send(): Sends message to server
     public static void send(String msg) throws IOException {
         output.write((msg+"\n").getBytes());
         output.flush();
     }
 
+    //getServerInfo(): from the job info statements, it gets the available
+    //resources available 
     public static int getServerInfo(String response) throws IOException {
 
         String [] res = response.split(" ", 7);
@@ -86,6 +92,8 @@ public class DSClient {
         return -1;
 
     }
+
+    //closeConn(): closes the connection
     public static void closeConn() {
         try {
             System.out.println("terminating");
@@ -98,6 +106,8 @@ public class DSClient {
         }
     }
     
+    //getPendingJobs(): sends the LSTJ job to the server and returns the
+    ///number of waiting jobs
     public static int getPendingJobs(String server) throws IOException {
         int total = 0;
 
@@ -124,7 +134,8 @@ public class DSClient {
 
     }
     
-    //gets all servers sent by DS server
+    //getAllServers(): gets all servers sent by DS server and returns a 2D array containing
+    //this information
     public static String[][] getAllServers (int nData, int nDataFields) throws IOException {
         String [][] allServers = new String[nData][nDataFields];
 
@@ -140,8 +151,8 @@ public class DSClient {
         return allServers;
     }
 
-    //best server uses a fitness value and other criterias to determine which server
-    //to use.
+    //getBestServer(): Best server uses a fitness value and other criterias to 
+    //determine which server to use.
     public static String[] getBestServer(int nData, int jobCore) throws IOException {
         int nDataFields = 9;
         int coreIndex = 4;
