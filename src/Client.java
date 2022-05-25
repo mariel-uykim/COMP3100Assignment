@@ -64,10 +64,14 @@ public class DSClient {
 
     //getServerInfo(): from the job info statements, it gets the available
     //resources available 
-    public static int getServerInfo(String response) throws IOException {
+    public static int getServerInfo(String response, int option) throws IOException {
 
         String [] res = response.split(" ", 7);
         String message = "GETS Capable ";
+
+        if(option == 2) {
+            message = "GETS Avail";
+        }
 
         for(int i = (res.length)-3; i < res.length; i++){
             message += (res[i] + " ");
@@ -154,15 +158,17 @@ public class DSClient {
     //getBestServer(): Best server uses a fitness value and other criterias to 
     //determine which server to use.
     public static String[] getBestServer(int nData, int jobCore) throws IOException {
-        int nDataFields = 9;
-        int coreIndex = 4;
+
+        //index of server information in allServers array
         int typeIndex = 0;
-        int wJobIndex = 7;
-        int rJobIndex = 8;
-        int sTimeIndex = 3;
         int idIndex = 1;
         int stateIndex = 2;
-
+        int sTimeIndex = 3;
+        int coreIndex = 4;
+        int wJobIndex = 7;
+        int rJobIndex = 8;
+        int nDataFields = 9;
+        
         String [] bestServer = null;
         ArrayList <String> serverTypes = new ArrayList<String>();
 
@@ -171,20 +177,26 @@ public class DSClient {
 
         allServers = getAllServers(nData, nDataFields);
 
-        //get fVals of all and get all server types
+        //get fitness values of all servers and get all server types in order
         for(int i = 0; i < allServers.length; i++) {
+            //fitness value = available core of server - cores required for job
             int fv = Integer.parseInt(allServers[i][coreIndex]) - jobCore;
             fVals.add(fv);
 
+            //adds server type to server list if it is not in it yet
             if(!serverTypes.contains(allServers[i][typeIndex])) {
                 serverTypes.add(allServers[i][typeIndex]);
             }
         }
 
+        //sorts fVals from lowest to highest
         ArrayList <Integer> sortedfVals = new ArrayList<Integer>(fVals);
-        sortedfVals.sort(Comparator.reverseOrder());
+        // sortedfVals.sort(Comparator.reverseOrder());
+        Collections.sort(sortedfVals);
 
         for(Integer i : sortedfVals) {
+
+            //gets the index of the array that has 
             int curr = fVals.indexOf(i);
             int wJobs = Integer.parseInt(allServers[curr][wJobIndex]);
             int rJobs = Integer.parseInt(allServers[curr][rJobIndex]);
@@ -192,11 +204,11 @@ public class DSClient {
             if((wJobs == 0 || rJobs == 0) && i >= 0) {
                 if(bestServer == null) {
                     bestServer = new String[nDataFields];
-                    
                 }
                 for(int j = 0; j < nDataFields; j++) {                    
                     bestServer[j] = allServers[curr][j];
                 }
+                break;
             }
         }
 
@@ -250,6 +262,9 @@ public class DSClient {
         return Integer.parseInt(data[idx]);
     }
 
+    //check pending jobs of other servers and migrate others to empty servers
+
+
     public DSClient(String hostid, int port) {
         //try to connect to server
         Boolean result = serverConn(hostid, port);
@@ -262,8 +277,9 @@ public class DSClient {
             if(!initialise()) {
                 return;
             }
+            
             while(true) {
-
+                
                 send("REDY");
                 
                 String currJob = response(false);
@@ -272,20 +288,26 @@ public class DSClient {
                     currJob = response(false);
                 }
 
+                //skip current iteration if sent response is JCPL 
                 if(currJob.contains("JCPL")) {
                     continue;
                 }
 
+                //quit if no more jobs remaining
                 if(currJob.contains("NONE")) {
                     send("QUIT");
                     break;
                 }
 
-                int nData = getServerInfo(currJob);
+                int nData = getServerInfo(currJob, 2);
 
                 if(nData == -1) {
-                    send("QUIT");
-                    break;
+                    nData = getServerInfo(currJob, 1);
+
+                    if(nData == -1) {
+                        send("QUIT");
+                        break;
+                    }
                 }
                 
                 send("OK");
