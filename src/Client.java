@@ -11,7 +11,7 @@ public class DSClient {
     private static BufferedReader input;
     private static DataOutputStream output;
     private static String username = System.getProperty("user.name");
-    private static HashMap<String, ArrayList<Integer>> serverJobs = new HashMap<String, ArrayList<Integer>>();
+    private static HashMap<String, ArrayList<Integer>> runningJobs = new HashMap<String, ArrayList<Integer>>();
 
     public static boolean serverConn(String hostid, int port) {
         try {
@@ -263,25 +263,36 @@ public class DSClient {
         return Integer.parseInt(data[idx]);
     }
 
-    //modifyServerJobs(): modifies global variable 'serverJobs' that keeps 
+    //modifyRunningJobs(): modifies global variable 'runningJobs' that keeps 
     //track of all job acitivities. Option 0->delete job, Option 1-> add job. 
-    pubic static void modifyServerJobs(String sType, String sId, String jobId, int option) {
-        String serverInfo = sType + "||" + sId;
+    public static void modifyRunningJobs(String sType, String sId, int jobId, int option) {
 
         if(option == 1){
-            String jobsPending = serverJobs.get(serverInfo);
-
-            if(jobsPending != null) {
-                serverInfo.put(serverInfo, job)
-            }   
-            else {
-                serverInfo.put(serverInfo, jobId);
+            String serverInfo = sType + "||" + sId;
+            ArrayList <Integer> tempArr = runningJobs.get(serverInfo);
+            if(tempArr == null) {
+                tempArr = new ArrayList<Integer>();
             }
-        }
-        else {
+            tempArr.add(jobId);
+            runningJobs.put(serverInfo, tempArr);
             
         }
+        else {
+           for (String j : runningJobs.keySet()) {
+               if(runningJobs.get(j).contains(jobId)) {
+                    ArrayList <Integer> tempArr = runningJobs.get(j);
+                    tempArr.remove(tempArr.indexOf(jobId));
+                    runningJobs.put(j, tempArr);
+                    break;
+               }
+            }
+        }
     }
+    //migrateServer(): migrates a job to different server 
+    private static void migrateServer(int jobId) {
+        
+    }
+
     //check pending jobs of other servers and migrate others to empty servers
     //add on top of fv check other performance matrix
 
@@ -310,6 +321,7 @@ public class DSClient {
 
                 //skip current iteration if sent response is JCPL 
                 if(currJob.contains("JCPL")) {
+                    modifyRunningJobs("", "", getJobInfo(currJob, 'i'), 0);
                     continue;
                 }
 
@@ -331,14 +343,22 @@ public class DSClient {
                 }
                 
                 send("OK");
+
                 String [] server = getBestServer(nData, getJobInfo(currJob, 'c'));
 
                 String serverType = server[0];
                 String serverID = server[1];
+                int jobID = getJobInfo(currJob, 'i');
 
                 response(false);
-                String sched = "SCHD " + getJobInfo(currJob, 'i') + " " + serverType + " " + serverID;
+
+                String sched = "SCHD " + jobID + " " + serverType + " " + serverID;
                 send(sched);
+                modifyRunningJobs(serverType, serverID, jobID, 1);
+                runningJobs.entrySet().forEach(e -> {
+                    System.out.print(e.getKey() + "--->" + Arrays.toString(e.getValue()) + " // ");
+                });
+                System.out.println("");
 
                 response(false);
             }
