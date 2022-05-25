@@ -138,7 +138,7 @@ public class DSClient {
         else if(option == 2) {
             sendMsg("GETS All");
         }
-        String data = printRes(false);
+        String data = printRes(true);
         
         //split data if not error
         if(data.contains("DATA")){
@@ -187,6 +187,20 @@ public class DSClient {
 
     }
 
+    pubic static ArrayList<String> getBestFit(int nData) throws IOException {
+        String data = getAllServers(nData);
+        int nDataFields = 9;
+        int coreIndex = 4;
+        int typeIndex = 0;
+        int lsIdx= 0;
+
+        String [] list = data.split("###");
+        ArrayList<ArrayList<String>> largestServer = new ArrayList<ArrayList<String>>();
+        String [][] servers = new String[list.length][nDataFields];
+        
+        
+    }
+
     /**
     * getLargestServer(): This method calls getAllServers to get server data
     * and splits this into a 2D array. While storing into the array, it checks
@@ -233,25 +247,25 @@ public class DSClient {
                 lsIdx++;
             }
 
-            //restart list if greater
-            else if(Integer.parseInt(servers[i][coreIndex]) >
-                    Integer.parseInt(largestServer.get(0).get(coreIndex))) {
+            // //restart list if greater
+            // else if(Integer.parseInt(servers[i][coreIndex]) >
+            //         Integer.parseInt(largestServer.get(0).get(coreIndex))) {
 
-                lsIdx = 0;
+            //     lsIdx = 0;
                 
-                //clear current list
-                largestServer.clear();
-                largestServer.add(new ArrayList<String>());
+            //     //clear current list
+            //     largestServer.clear();
+            //     largestServer.add(new ArrayList<String>());
 
-                for(int j = 0; j < nDataFields; j++) {
+            //     for(int j = 0; j < nDataFields; j++) {
                     
-                    largestServer.get(lsIdx).add(servers[i][j]);
+            //         largestServer.get(lsIdx).add(servers[i][j]);
 
-                }
+            //     }
 
 
-                lsIdx++;
-            }
+            //     lsIdx++;
+            // }
         }
 	
         return largestServer;
@@ -300,31 +314,32 @@ public class DSClient {
             //tells server 'redy' to start sending commands
             sendMsg("REDY");
 
-            //stores server response in jobn variable
-            String jobn = printRes(false);
-
-            //get list of servers
-            int nData = getInfo(jobn, 2);
-
-            //quit if no servers or an error happens
-            if(nData == -1) {
-                sendMsg("QUIT");
-            }
-            
-            //acknowleges server repsonse
-            sendMsg("OK");
-
-            //gets largest server and stores in array
-            ArrayList<ArrayList<String>> servers = getLargestServer(nData);
-
-            //clear input stream
-            printRes(false);
-
             int i = 0;
             while(true) {
-                if(i >= servers.size()) {
-                    i = 0;
+                //stores server response in jobn variable
+                String jobn = printRes(false);
+
+                //end loop when no more jobs
+                if(jobn.contains("NONE")) {
+                    sendMsg("QUIT");
+                    break;
                 }
+
+                //get list of servers
+                int nData = getInfo(jobn, 1);
+
+                //quit if no servers or an error happens
+                if(nData == -1) {
+                    sendMsg("QUIT");
+                }
+                
+                //acknowleges server repsonse
+                sendMsg("OK");
+
+                //gets largest server and stores in array
+                ArrayList<ArrayList<String>> servers = getLargestServer(nData);
+
+                printRes(false);
 
                 String serverType = servers.get(i).get(0);
                 String serverID = servers.get(i).get(1);
@@ -345,19 +360,9 @@ public class DSClient {
                 String sched = "SCHD " + getJobID(jobn) + " " + serverType + " " + serverID;
                 sendMsg(sched);
 
-                i++;
-
                 printRes(false);
 
                 sendMsg("REDY");
-
-                jobn = printRes(false);
-
-                //end loop when no more jobs
-                if(jobn.contains("NONE")) {
-                    sendMsg("QUIT");
-                    break;
-                }
 
 
             }
