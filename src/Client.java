@@ -220,6 +220,9 @@ public class DSClient {
         return bestServer;
     }
 
+    //getJobInfo(): outputs information of job depending on what
+    //data is given. Option 'c' gives job cores while option 'i'
+    //gives job id from statement
     public static int getJobInfo(String jobn, char option) {
         int idx = 0;
 
@@ -230,6 +233,9 @@ public class DSClient {
             idx = 2;
         }
         String [] data = jobn.split(" ");
+        if(data[idx] == null) {
+            return -1;
+        }
         return Integer.parseInt(data[idx]);
     }
 
