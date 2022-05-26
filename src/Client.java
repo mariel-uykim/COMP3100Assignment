@@ -88,7 +88,9 @@ public class DSClient {
             int nRecIdx = 1;
             String nData = dataRec[nRecIdx];
 
-            if(nData == "." || nData.length() <= 0){
+            if(nData == "." || Integer.parseInt(nData) <= 0){
+                send("OK");
+                response(false);
                 return -1;
             }
             return Integer.parseInt(nData);
@@ -111,31 +113,39 @@ public class DSClient {
         }
     }
     
-    //getPendingJobs(): sends the LSTJ job to the server and returns the
-    ///number of waiting jobs
-    public static int getPendingJobs(String server) throws IOException {
-        int total = 0;
+    //getPendingJobs(): sends the LSTJ command to the server and returns the
+    ///first waiting job
+    public static String [] getPendingJobs(String sType, String sID) throws IOException {
 
-        send("LSTJ " + server);
+        send("LSTJ " + sType + " " + sID);
 
+        String [] pending = null;
+        int nDataFields = 9;
         String resp = response(false);
+        int nResp = 8;
 
         if(resp.contains("DATA")) {
             String [] data = resp.split(" ");
             int nData = Integer.parseInt(data[1]);
-            int counter = 0;
 
             for(int i = 0; i < nData; i++) {
-                response(false);
-                counter++;
+                String jobQueued = response(false);
+                String [] temp = jobQueued.split(" ");
+                if(Integer.parseInt(temp[3]) == -1 && i == nData-1) {
+
+                    pending = new String[nResp];
+
+                    for(int j = 0; j < nResp; j++) {
+                        pending[j] = temp[j];
+                    }
+                }
             }
 
-            total = counter;
             send("OK");
             response(false);
         }
 
-        return total;
+        return pending;
 
     }
     
@@ -220,9 +230,9 @@ public class DSClient {
                 
                 bestServer = new String[nDataFields];
 
-                if(allServers[k][stateIndex].equals("Active") ||
-                   allServers[k][stateIndex].equals("Booting") ||
-                   allServers[k][stateIndex].equals("Idle")) {
+                if(allServers[k][stateIndex].equals("active") ||
+                   allServers[k][stateIndex].equals("booting") ||
+                   allServers[k][stateIndex].equals("idle")) {
                     for(int j = 0; j < nDataFields; j++) {
                         bestServer[j] = allServers[k][j];
                     }
@@ -262,35 +272,62 @@ public class DSClient {
         return Integer.parseInt(data[idx]);
     }
 
-    public static void migrateServer(int jID, String srcType, String srcID, String tgtType, String tgtID) {
-        send("MIGJ " + jID + " " + srcType + " " + srcID + " " + tgtType + " " + tgtID);
-        modifyRunningJobs(tgtType, tgtID, jobID, 2);
+    public static void migrateServer(int jID, String srcType, String srcID, String tgtType, String tgtID) throws IOException {
+        String msg = "MIGJ " + jID + " " + srcType + " " + srcID + " " + tgtType + " " + tgtID;
+        send(msg);
+        modifyRunningJobs(tgtType, tgtID, jID, 2);
         response(false);
     }
 
-    public static void getNextBest() {
-        int nData = getServerInfo(job, 2);
-        int nDataFields = 9;
-        getAllServers(nData, nDataFields);
+    //getNextBest: find alternative vacant server
+    public static void getNextBest(String sType, String sID) throws IOException {
+        String [] pendingJob = getPendingJobs(sType, sID);
+
+        if(pendingJob != null) {
+            String jobInfo = "job time id run " + pendingJob[5] + " " + pendingJob[6] + " " + pendingJob[7];
+            int nData = getServerInfo(jobInfo, 2);
+            int nDataFields = 9;
+           
+            String [][] allServers = getAllServers(nData, nDataFields);
+
+            for(int i = 0; i < allServers.length; i++) {
+                int fV = Integer.parseInt(allServers[i][4]) - Integer.parseInt(pendingJob[5]);
+                if(fV >= 0 && fV <= 5 && (allServers[i][2].equals("active") || allServers[i][2].equals("idle"))) {
+                    migrateServer(Integer.parseInt(pendingJob[0]), sType, sID, allServers[i][0], allServers[i][1]);
+                    break;
+                }
+            }
+        }
     }
 
-    public static String findCrowdedServer() {
+    //findCrowdedServer(): return server with the highest load
+    public static String [] findCrowdedServer() throws IOException {
         String mostCrowded = new String();
+        int nJobs = 0;
+        String [] server = new String[3];
 
         for(String i : runningJobs.keySet()) {
             if(mostCrowded.length() == 0) {
                 mostCrowded = i;
+                nJobs = runningJobs.get(i).size();
             }
             else if (runningJobs.get(i).size() > 
                     runningJobs.get(mostCrowded).size()) {
                 mostCrowded = i;
+                nJobs = runningJobs.get(i).size();
             }
         }
 
-        return mostCrowded;
+        String temp [] = mostCrowded.split("||");
+
+        server[0] = temp[0];
+        server[1] = temp[1];
+        server[2] = nJobs+"";
+
+        return server;
 
     }
-    public static 
+    
     //modifyRunningJobs(): modifies global variable 'runningJobs' that keeps 
     //track of all job acitivities. Option 0->delete job, Option 1-> add job, Option 2-> change server. 
     public static void modifyRunningJobs(String sType, String sId, int jobId, int option) {
@@ -388,6 +425,13 @@ public class DSClient {
                 jobCount++;
 
                 response(false);
+
+                if(jobCount > 10) {
+                    String [] crowdedServer = findCrowdedServer();
+                    if(Integer.parseInt(crowdedServer[2]) > 5) {
+                        getNextBest(crowdedServer[0], crowdedServer[1]);
+                    }
+                }
             }
         }
 
