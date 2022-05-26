@@ -202,16 +202,13 @@ public class DSClient {
             int wJobs = Integer.parseInt(allServers[curr][wJobIndex]);
             int rJobs = Integer.parseInt(allServers[curr][rJobIndex]);
 
-            if((wJobs == 0 || rJobs == 0) &&
-                wJobs < 2 && 
-                && i >= 0) {
-                if(bestServer == null) {
-                    bestServer = new String[nDataFields];
-                }
+            if((wJobs == 0 || rJobs == 0) && i >= 0) {
+                bestServer = new String[nDataFields];
                 for(int j = 0; j < nDataFields; j++) {                    
                     bestServer[j] = allServers[curr][j];
                 }
                 break;
+                
             }
         }
 
@@ -265,8 +262,37 @@ public class DSClient {
         return Integer.parseInt(data[idx]);
     }
 
+    public static void migrateServer(int jID, String srcType, String srcID, String tgtType, String tgtID) {
+        send("MIGJ " + jID + " " + srcType + " " + srcID + " " + tgtType + " " + tgtID);
+        modifyRunningJobs(tgtType, tgtID, jobID, 2);
+        response(false);
+    }
+
+    public static void getNextBest() {
+        int nData = getServerInfo(job, 2);
+        int nDataFields = 
+        getAllServers(nData, nDataFields);
+    }
+
+    public static String findCrowdedServer() {
+        String mostCrowded = new String();
+
+        for(String i : runningJobs.keySet()) {
+            if(mostCrowded.length() == 0) {
+                mostCrowded = i;
+            }
+            else if (runningJobs.get(i).size() > 
+                    runningJobs.get(mostCrowded).size()) {
+                mostCrowded = i;
+            }
+        }
+
+        return mostCrowded;
+
+    }
+    public static 
     //modifyRunningJobs(): modifies global variable 'runningJobs' that keeps 
-    //track of all job acitivities. Option 0->delete job, Option 1-> add job. 
+    //track of all job acitivities. Option 0->delete job, Option 1-> add job, Option 2-> change server. 
     public static void modifyRunningJobs(String sType, String sId, int jobId, int option) {
 
         if(option == 1){
@@ -279,6 +305,10 @@ public class DSClient {
             runningJobs.put(serverInfo, tempArr);
             
         }
+        else if (option == 2){
+            modifyRunningJobs(sType, sId, jobId, 0);
+            modifyRunningJobs(sType, sId, jobId, 1);
+        }
         else {
            for (String j : runningJobs.keySet()) {
                if(runningJobs.get(j).contains(jobId)) {
@@ -289,18 +319,6 @@ public class DSClient {
                }
             }
         }
-    }
-    //checkServerJobs(): check current jobs in server, returns percentage of no. of running jobs 
-    private static float checkServerJobs(String type, String id) {
-        String serverInfo = type + "||" + id;
-        ArrayList<Integer> tempArr = runningJobs.get(serverInfo);
-        float percent = 0;
-
-        if(tempArr != null && jobCount > 0) {
-            percent = tempArr.size()/jobCount;
-        }
-
-        return percent;
     }
 
     //check pending jobs of other servers and migrate others to empty servers
@@ -365,6 +383,7 @@ public class DSClient {
 
                 String sched = "SCHD " + jobID + " " + serverType + " " + serverID;
                 send(sched);
+
                 modifyRunningJobs(serverType, serverID, jobID, 1);
                 jobCount++;
 
