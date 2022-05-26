@@ -71,7 +71,7 @@ public class DSClient {
         String message = "GETS Capable ";
 
         if(option == 2) {
-            message = "GETS Avail";
+            message = "GETS Avail ";
         }
 
         for(int i = (res.length)-3; i < res.length; i++){
@@ -270,7 +270,7 @@ public class DSClient {
 
     public static void getNextBest() {
         int nData = getServerInfo(job, 2);
-        int nDataFields = 
+        int nDataFields = 9;
         getAllServers(nData, nDataFields);
     }
 
