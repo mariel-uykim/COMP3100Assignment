@@ -12,7 +12,8 @@ public class DSClient {
     private static String username = System.getProperty("user.name");
     private static HashMap<String, ArrayList<Integer>> runningJobs = new HashMap<String, ArrayList<Integer>>();
     private static int jobCount = 0;
-
+    
+    //serverConn(): Initial connection to server
     public static boolean serverConn(String hostid, int port) {
         try {
             s = new Socket(hostid, port);
@@ -273,6 +274,7 @@ public class DSClient {
         return Integer.parseInt(data[idx]);
     }
 
+    //migrateServer(): transfers a job from one server to another
     public static void migrateServer(int jID, String srcType, String srcID, String tgtType, String tgtID) throws IOException {
         String msg = "MIGJ " + jID + " " + srcType + " " + srcID + " " + tgtType + " " + tgtID;
         send(msg);
@@ -280,7 +282,7 @@ public class DSClient {
         response(false);
     }
 
-    //getNextBest: find alternative vacant server
+    //getNextBest(): find alternative vacant server
     public static void getNextBest(String sType, String sID) throws IOException {
         String [] pendingJob = getPendingJobs(sType, sID);
 
@@ -333,6 +335,7 @@ public class DSClient {
 
     }
     
+    //serverJobCount(): returns the number of jobs that are in queue or running in a server
     public static int serverJobCount(String type, String id) {
         String server = type + "||" + id;
         if(runningJobs.get(server) != null) {
@@ -369,9 +372,6 @@ public class DSClient {
             }
         }
     }
-
-    //check pending jobs of other servers and migrate others to empty servers
-    //add on top of fv check other performance matrix
 
     public DSClient(String hostid, int port) {
         //try to connect to server
