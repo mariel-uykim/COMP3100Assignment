@@ -212,7 +212,8 @@ public class DSClient {
             int wJobs = Integer.parseInt(allServers[curr][wJobIndex]);
             int rJobs = Integer.parseInt(allServers[curr][rJobIndex]);
 
-            if((wJobs == 0 || rJobs == 0) && i >= 0) {
+            if((wJobs == 0 || rJobs == 0) && i >= 0 && 
+                serverJobCount(allServers[curr][typeIndex], allServers[curr][idIndex]) <= (jobCount*0.20)) {
                 bestServer = new String[nDataFields];
                 for(int j = 0; j < nDataFields; j++) {                    
                     bestServer[j] = allServers[curr][j];
@@ -292,7 +293,11 @@ public class DSClient {
 
             for(int i = 0; i < allServers.length; i++) {
                 int fV = Integer.parseInt(allServers[i][4]) - Integer.parseInt(pendingJob[5]);
-                if(fV >= 0 && fV <= 5 && (allServers[i][2].equals("active") || allServers[i][2].equals("idle"))) {
+                if(fV >= 0 && fV <= 5 && 
+                (allServers[i][2].equals("active") || 
+                allServers[i][2].equals("idle") || 
+                allServers[i][2].equals("booting")) &&
+                (Integer.parseInt(allServers[i][7]) == 0 || Integer.parseInt(allServers[i][8]) == 0 )) {
                     migrateServer(Integer.parseInt(pendingJob[0]), sType, sID, allServers[i][0], allServers[i][1]);
                     break;
                 }
@@ -328,6 +333,13 @@ public class DSClient {
 
     }
     
+    public static int serverJobCount(String type, String id) {
+        String server = type + "||" + id;
+        if(runningJobs.get(server) != null) {
+            return runningJobs.get(server).size();
+        }
+        return 0;
+    }
     //modifyRunningJobs(): modifies global variable 'runningJobs' that keeps 
     //track of all job acitivities. Option 0->delete job, Option 1-> add job, Option 2-> change server. 
     public static void modifyRunningJobs(String sType, String sId, int jobId, int option) {
