@@ -282,7 +282,7 @@ public class DSClient {
         response(false);
     }
 
-    //getNextBest(): find alternative vacant server
+    //getNextBest(): find alternative vacant server if current server is crowded
     public static void getNextBest(String sType, String sID) throws IOException {
         String [] pendingJob = getPendingJobs(sType, sID);
 
@@ -290,18 +290,22 @@ public class DSClient {
             String jobInfo = "job time id run " + pendingJob[5] + " " + pendingJob[6] + " " + pendingJob[7];
             int nData = getServerInfo(jobInfo, 2);
             int nDataFields = 9;
-           
+            int minFVal = 0;
+            int maxFVal = 5;
+
             String [][] allServers = getAllServers(nData, nDataFields);
 
             for(int i = 0; i < allServers.length; i++) {
                 int fV = Integer.parseInt(allServers[i][4]) - Integer.parseInt(pendingJob[5]);
-                if(fV >= 0 && fV <= 5 && 
-                (allServers[i][2].equals("active") || 
-                allServers[i][2].equals("idle") || 
-                allServers[i][2].equals("booting")) &&
-                (Integer.parseInt(allServers[i][7]) == 0 || Integer.parseInt(allServers[i][8]) == 0 )) {
-                    migrateServer(Integer.parseInt(pendingJob[0]), sType, sID, allServers[i][0], allServers[i][1]);
-                    break;
+                if(!(allServers[i][0].equals(sType) && allServers[i][1].equals(sID))) {
+                    if(fV >= minFVal && fV <= maxFVal && 
+                    (allServers[i][2].equals("active") || 
+                    allServers[i][2].equals("idle") || 
+                    allServers[i][2].equals("booting")) &&
+                    (Integer.parseInt(allServers[i][7]) == 0 || Integer.parseInt(allServers[i][8]) == 0 )) {
+                        migrateServer(Integer.parseInt(pendingJob[0]), sType, sID, allServers[i][0], allServers[i][1]);
+                        break;
+                    }
                 }
             }
         }
@@ -387,10 +391,19 @@ public class DSClient {
             }
             
             while(true) {
-                
+                String currJob = "";
+                int nData = -1;
+                String [] server = null;
+                String serverType = "";
+                String serverID = "";
+                int jobID = -1;
+                String sched = "";
+                int minJobCount = 10;
+                int maxJobs = 5;
+
                 send("REDY");
                 
-                String currJob = response(false);
+                currJob = response(false);
 
                 if(currJob.equals(".")) {
                     currJob = response(false);
@@ -409,11 +422,14 @@ public class DSClient {
                     break;
                 }
 
-                int nData = getServerInfo(currJob, 2);
+                //find available servers for job
+                nData = getServerInfo(currJob, 2);
 
+                //find other servers for job if no available server
                 if(nData == -1) {
                     nData = getServerInfo(currJob, 1);
 
+                    //quit if no server
                     if(nData == -1) {
                         send("QUIT");
                         break;
@@ -422,25 +438,30 @@ public class DSClient {
                 
                 send("OK");
 
-                String [] server = getBestServer(nData, getJobInfo(currJob, 'c'));
+                //find best server
+                server = getBestServer(nData, getJobInfo(currJob, 'c'));
 
-                String serverType = server[0];
-                String serverID = server[1];
-                int jobID = getJobInfo(currJob, 'i');
+                serverType = server[0];
+                serverID = server[1];
+                jobID = getJobInfo(currJob, 'i');
 
                 response(false);
 
-                String sched = "SCHD " + jobID + " " + serverType + " " + serverID;
+                //schedule job to best server
+                sched = "SCHD " + jobID + " " + serverType + " " + serverID;
                 send(sched);
 
+                //update global list of running jobs on servers
                 modifyRunningJobs(serverType, serverID, jobID, 1);
                 jobCount++;
 
                 response(false);
 
-                if(jobCount > 10) {
+                //check if most crowded server has more jobs that the set 
+                //threshold and transfer to next best server
+                if(jobCount > minJobCount) {
                     String [] crowdedServer = findCrowdedServer();
-                    if(Integer.parseInt(crowdedServer[2]) > 5) {
+                    if(Integer.parseInt(crowdedServer[2]) > maxJobs) {
                         getNextBest(crowdedServer[0], crowdedServer[1]);
                     }
                 }
