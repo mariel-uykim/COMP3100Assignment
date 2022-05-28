@@ -2,7 +2,6 @@ import java.net.*;
 import java.io.*;
 import java.util.*;
 import java.util.ArrayList;
-import javax.swing.plaf.TreeUI;
 
 public class DSClient {
 
