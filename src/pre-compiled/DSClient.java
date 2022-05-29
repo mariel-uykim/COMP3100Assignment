@@ -460,14 +460,6 @@ public class DSClient {
 
                 response(false);
 
-                //check if most crowded server has more jobs that the set 
-                //threshold and transfer to next best server
-                if(jobCount > minJobCount) {
-                    String [] crowdedServer = findCrowdedServer();
-                    if(Integer.parseInt(crowdedServer[2]) > maxJobs) {
-                        getNextBest(crowdedServer[0], crowdedServer[1]);
-                    }
-                }
             }
         }
 
