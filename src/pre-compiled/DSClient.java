@@ -223,6 +223,7 @@ public class DSClient {
             }
         }
 
+        //perform if no server meets criterias above
         if(bestServer == null) {
             boolean isActive = false;
             int k = 0;
@@ -242,6 +243,7 @@ public class DSClient {
 
                 k++; 
             }
+            //gets first server on list
             if(isActive == false) {
                 for(int j = 0; j < nDataFields; j++) {
                     bestServer[j] = allServers[0][j];
