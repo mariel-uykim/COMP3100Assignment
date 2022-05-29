@@ -219,7 +219,9 @@ public class DSClient {
                     bestServer[j] = allServers[curr][j];
                 }
                 break;
-                
+            }
+            else {
+                fVals.set(curr, -1);
             }
         }
 
