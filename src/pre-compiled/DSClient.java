@@ -64,7 +64,7 @@ public class DSClient {
     }
 
     //getServerInfo(): from the job info statements, it gets the available
-    //resources available 
+    //resources available. Option 1 -> GETS Capable; Option 2 -> GETS Avail
     public static int getServerInfo(String response, int option) throws IOException {
 
         String [] res = response.split(" ", 7);
@@ -225,7 +225,7 @@ public class DSClient {
             }
         }
 
-        //perform if no server meets criterias above
+        //get an active, booting, or idle server if no server meets criterias above
         if(bestServer == null) {
             boolean isActive = false;
             int k = 0;
@@ -384,6 +384,7 @@ public class DSClient {
         //try to connect to server
         Boolean result = serverConn(hostid, port);
 
+        //quit if failed to connect to server
         if(result == false) {
             System.out.println("Failed to conencect..");
             return;
